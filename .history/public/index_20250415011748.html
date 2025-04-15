@@ -1,0 +1,357 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Route Planner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .control-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .coords-container {
+            display: flex;
+            gap: 10px;
+        }
+        .coords-container input {
+            flex: 1;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #4CAF50;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+        }
+        .result-detail {
+            margin-bottom: 10px;
+        }
+        .google-maps-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #4285F4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .google-maps-link:hover {
+            background-color: #3367D6;
+        }
+        .error-message {
+            color: #ff0000;
+            margin-top: 10px;
+            display: none;
+        }
+        .example-coords {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .coords-preset {
+            padding: 2px 8px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .coords-preset:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-route"></i> Safe Route Planner</h1>
+            <p>Find the safest route between two locations based on crime data</p>
+        </header>
+
+        <div class="control-panel">
+            <div class="form-group">
+                <label for="crime-data">Upload Crime Data (CSV file with lat/long columns):</label>
+                <input type="file" id="crime-data" accept=".csv">
+            </div>
+
+            <div class="form-group">
+                <label for="source-coords">Source Coordinates:</label>
+                <div class="coords-container">
+                    <input type="text" id="source-lat" placeholder="Latitude">
+                    <input type="text" id="source-lon" placeholder="Longitude">
+                </div>
+                <div class="example-coords">
+                    Example: <span class="coords-preset" data-lat="12.8259" data-lon="80.0395">12.8259, 80.0395</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dest-coords">Destination Coordinates:</label>
+                <div class="coords-container">
+                    <input type="text" id="dest-lat" placeholder="Latitude">
+                    <input type="text" id="dest-lon" placeholder="Longitude">
+                </div>
+                <div class="example-coords">
+                    Example: <span class="coords-preset" data-lat="13.0843" data-lon="80.2705">13.0843, 80.2705</span>
+                </div>
+            </div>
+
+            <button id="calculate-route">Calculate Safe Route</button>
+            <div id="error-message" class="error-message"></div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Calculating safe route...</p>
+        </div>
+
+        <div id="map"></div>
+
+        <div id="result-panel" class="result-panel">
+            <h2>Route Information</h2>
+            <div class="result-detail">
+                <strong>Distance:</strong> <span id="route-distance">0</span> km
+            </div>
+            <div class="result-detail">
+                <strong>Processing Time:</strong> <span id="processing-time">0</span> seconds
+            </div>
+            <a id="google-maps-link" href="#" target="_blank" class="google-maps-link">
+                <i class="fab fa-google"></i> Open in Google Maps
+            </a>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([13.0, 80.2], 10); // Chennai area
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // UI elements
+        const calculateButton = document.getElementById('calculate-route');
+        const loadingIndicator = document.getElementById('loading');
+        const resultPanel = document.getElementById('result-panel');
+        const errorMessage = document.getElementById('error-message');
+        const routeDistance = document.getElementById('route-distance');
+        const processingTime = document.getElementById('processing-time');
+        const googleMapsLink = document.getElementById('google-maps-link');
+
+        // Route layer
+        let routeLayer = null;
+        let waypointMarkers = [];
+
+        // Add event listeners for preset coordinates
+        document.querySelectorAll('.coords-preset').forEach(preset => {
+            preset.addEventListener('click', function() {
+                const lat = this.getAttribute('data-lat');
+                const lon = this.getAttribute('data-lon');
+                const parentDiv = this.closest('.form-group');
+                
+                if (parentDiv.querySelector('label').htmlFor === 'source-coords') {
+                    document.getElementById('source-lat').value = lat;
+                    document.getElementById('source-lon').value = lon;
+                } else {
+                    document.getElementById('dest-lat').value = lat;
+                    document.getElementById('dest-lon').value = lon;
+                }
+            });
+        });
+
+        // Calculate route
+       // In your index.html script section
+calculateButton.addEventListener('click', async function() {
+  // Get input values
+  const sourceLat = document.getElementById('source-lat').value.trim();
+  const sourceLon = document.getElementById('source-lon').value.trim();
+  const destLat = document.getElementById('dest-lat').value.trim();
+  const destLon = document.getElementById('dest-lon').value.trim();
+  const crimeDataFile = document.getElementById('crime-data').files[0];
+
+  // Validate inputs
+  if (!sourceLat || !sourceLon || !destLat || !destLon) {
+    showError('Please enter all coordinates');
+    return;
+  }
+
+  // Clear previous results
+  clearMap();
+  hideError();
+  showLoading();
+
+  try {
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('sourceLat', sourceLat);
+    formData.append('sourceLon', sourceLon);
+    formData.append('destLat', destLat);
+    formData.append('destLon', destLon);
+    
+    if (crimeDataFile) {
+      formData.append('crimeData', crimeDataFile);
+    }
+
+    console.log("Sending request to API...");
+    
+    // Call API
+    const response = await fetch('/api/route', {
+      method: 'POST',
+      body: formData
+    });
+
+    console.log("Response received, status:", response.status);
+    
+    const data = await response.json();
+    console.log("Response data:", data);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    displayRoute(data);
+  } catch (error) {
+    console.error("Error:", error);
+    showError(error.message || "Failed to calculate route");
+    
+    // Show a direct route as fallback if coordinates are valid
+    if (isValidCoordinate(sourceLat) && isValidCoordinate(sourceLon) && 
+        isValidCoordinate(destLat) && isValidCoordinate(destLon)) {
+      showDirectRoute(sourceLat, sourceLon, destLat, destLon);
+    }
+  } finally {
+    hideLoading();
+  }
+});
+
+// Helper function to validate coordinates
+function isValidCoordinate(coord) {
+  const num = parseFloat(coord);
+  return !isNaN(num);
+}
+
+// Function to show direct route as fallback
+function showDirectRoute(srcLat, srcLon, dstLat, dstLon) {
+  const routeCoordinates = [
+    [srcLat, srcLon],
+    [dstLat, dstLon]
+  ];
+  
+  routeLayer = L.polyline(routeCoordinates, {
+    color: 'blue',
+    weight: 5,
+    opacity: 0.7,
+    dashArray: '10,10',
+    lineJoin: 'round'
+  }).addTo(map);
+  
+  // Add markers
+  const sourceMarker = L.marker([srcLat, srcLon], {
+    title: "Start"
+  }).addTo(map);
+  
+  const destMarker = L.marker([dstLat, dstLon], {
+    title: "Destination"
+  }).addTo(map);
+  
+  // Store markers
+  waypointMarkers.push(sourceMarker);
+  waypointMarkers.push(destMarker);
+  
+  // Fit map to route
+  map.fitBounds(routeLayer.getBounds(), {
+    padding: [50, 50]
+  });
+  
+  // Show direct route message
+  showError("Could not calculate optimized route. Showing direct route instead.");
+}
+    </script>
+</body>
+</html>

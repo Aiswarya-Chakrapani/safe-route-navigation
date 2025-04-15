@@ -1,0 +1,27 @@
+{
+    "name": "safe-route-api",
+    "version": "1.0.0",
+    "description": "API for calculating safe routes based on crime data",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "csv-parser": "^3.2.0",
+        "express": "^4.21.2",
+        "haversine-distance": "^1.2.3",
+        "kd-tree-javascript": "^1.0.3",
+        "multer": "^1.4.5-lts.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

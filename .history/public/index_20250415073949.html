@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Route Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .coords-container {
+            display: flex;
+            gap: 10px;
+        }
+        .coords-container input {
+            flex: 1;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .maps-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4285F4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .loading, .error {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Safe Route Generator</h1>
+        
+        <div class="form-group">
+            <label for="source-coords">Source Coordinates:</label>
+            <div class="coords-container">
+                <input type="text" id="source-lat" placeholder="Latitude" value="12.8259">
+                <input type="text" id="source-lon" placeholder="Longitude" value="80.0395">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="dest-coords">Destination Coordinates:</label>
+            <div class="coords-container">
+                <input type="text" id="dest-lat" placeholder="Latitude" value="13.0843">
+                <input type="text" id="dest-lon" placeholder="Longitude" value="80.2705">
+            </div>
+        </div>
+
+        <button id="generate-btn">Generate Safe Route</button>
+        
+        <div id="loading" class="loading">Calculating route...</div>
+        <div id="error" class="error"></div>
+        
+        <div id="result" class="result" style="display:none;">
+            <a id="maps-link" href="#" target="_blank" class="maps-link">
+                Open in Google Maps
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const sourceLat = document.getElementById('source-lat').value.trim();
+            const sourceLon = document.getElementById('source-lon').value.trim();
+            const destLat = document.getElementById('dest-lat').value.trim();
+            const destLon = document.getElementById('dest-lon').value.trim();
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const result = document.getElementById('result');
+            const mapsLink = document.getElementById('maps-link');
+            
+            // Validate inputs
+            if (!sourceLat || !sourceLon || !destLat || !destLon) {
+                error.textContent = 'Please enter all coordinates';
+                error.style.display = 'block';
+                return;
+            }
+            
+            // Reset UI
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            result.style.display = 'none';
+            
+            try {
+                // Send request
+                const response = await fetch('/api/route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sourceLat,
+                        sourceLon,
+                        destLat,
+                        destLon
+                    })
+                });
+                
+                // Check for errors
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to generate route');
+                }
+                
+                // Get URL from response
+                const data = await response.json();
+                
+                // Show result
+                mapsLink.href = data.googleMapsUrl;
+                result.style.display = 'block';
+            } catch (err) {
+                error.textContent = err.message || 'An error occurred';
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+
+{
+    "name": "safe-route-api",
+    "version": "1.0.0",
+    "type": "module",
+    "dependencies": {
+      "haversine-distance": "^1.2.1"
+    }
+  }

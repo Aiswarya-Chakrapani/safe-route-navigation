@@ -141,17 +141,19 @@
             
             try {
                 // Send request
-// Update the fetch URL in your JavaScript
-                const response = await fetch('/api/route', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sourceLat,
-                        sourceLon,
-                        destLat,
-                        destLon
+                // Update the fetch URL in your JavaScript
+const response = await fetch('/api/route', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        sourceLat,
+        sourceLon,
+        destLat,
+        destLon
+    })
+});
                     })
                 });
                 

@@ -3,7 +3,6 @@
     "version": "1.0.0",
     "description": "API for calculating safe routes based on crime data",
     "main": "server.js",
-    "type": "module",
     "scripts": {
         "start": "node server.js",
         "dev": "nodemon server.js"
@@ -26,3 +25,11 @@
     "author": "",
     "license": "ISC"
 }
+{
+    "name": "safe-route-api",
+    "version": "1.0.0",
+    "type": "module",
+    "dependencies": {
+      "haversine-distance": "^1.2.1"
+    }
+  }
